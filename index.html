@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGL - Draw Letters</title>
+    <style>
+        canvas {
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+<canvas id="webgl-canvas" width="600" height="400"></canvas>
+
+<script type="text/javascript">
+    function main() {
+        const canvas = document.getElementById("webgl-canvas");
+        const gl = canvas.getContext("webgl");
+
+        if (!gl) {
+            console.log("WebGL not supported, falling back on experimental-webgl");
+            gl = canvas.getContext("experimental-webgl");
+        }
+
+        if (!gl) {
+            alert("Your browser does not support WebGL");
+            return;
+        }
+
+        // Function to draw using LINES for the first part
+        function drawUsingLines() {
+            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Black background
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            const khaki = [240 / 255, 230 / 255, 140 / 255, 1.0];
+
+            const vertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+
+            const vertices = new Float32Array([
+                // G
+                -0.8, 0.6, -0.5, 0.6,
+                -0.8, 0.6, -0.8, 0.2,
+                -0.8, 0.2, -0.5, 0.2,
+                -0.5, 0.2, -0.5, 0.4,
+                -0.6, 0.4, -0.5, 0.4,
+
+                // A
+                -0.3, 0.6, -0.1, 0.6,
+                -0.3, 0.6, -0.3, 0.2,
+                -0.1, 0.6, -0.1, 0.2,
+                -0.3, 0.4, -0.1, 0.4,
+
+                // R
+                0.1, 0.6, 0.1, 0.2,
+                0.1, 0.6, 0.3, 0.5,
+                0.3, 0.5, 0.3, 0.4,
+                0.3, 0.4, 0.1, 0.4,
+                0.1, 0.4, 0.3, 0.2
+            ]);
+
+            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+            const vertexShaderCode = `
+                attribute vec2 coordinates;
+                void main(void) {
+                    gl_Position = vec4(coordinates, 0.0, 1.0);
+                }
+            `;
+            const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+            gl.shaderSource(vertexShader, vertexShaderCode);
+            gl.compileShader(vertexShader);
+
+            const fragmentShaderCode = `
+                precision mediump float;
+                uniform vec4 color;
+                void main(void) {
+                    gl_FragColor = color;
+                }
+            `;
+            const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+            gl.shaderSource(fragmentShader, fragmentShaderCode);
+            gl.compileShader(fragmentShader);
+
+            const shaderProgram = gl.createProgram();
+            gl.attachShader(shaderProgram, vertexShader);
+            gl.attachShader(shaderProgram, fragmentShader);
+            gl.linkProgram(shaderProgram);
+            gl.useProgram(shaderProgram);
+
+            const coord = gl.getAttribLocation(shaderProgram, "coordinates");
+            gl.vertexAttribPointer(coord, 2, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(coord);
+
+            const color = gl.getUniformLocation(shaderProgram, "color");
+            gl.uniform4fv(color, khaki);
+
+            gl.drawArrays(gl.LINES, 0, vertices.length / 2);
+        }
+
+        // Function to clear canvas and redraw using TRIANGLES
+        function drawUsingTriangles() {
+            gl.clearColor(240 / 255, 230 / 255, 140 / 255, 1.0);  // Khaki background
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            const navyBlue = [0.0, 0.0, 0.5, 1.0];  // Navy blue color for letters
+
+            const vertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+
+            const vertices = new Float32Array([
+                // G (Bold G made up of multiple triangles)
+                -0.8, 0.6, -0.5, 0.6, -0.8, 0.5,  // Top thick part of G
+                -0.8, 0.5, -0.5, 0.6, -0.5, 0.5,  // Top thick part of G
+                -0.8, 0.2, -0.8, 0.5, -0.7, 0.5,  // Left vertical part of G
+                -0.8, 0.2, -0.7, 0.5, -0.7, 0.2,  // Left vertical part of G
+                -0.5, 0.2, -0.8, 0.2, -0.5, 0.3,  // Bottom part of G
+                -0.5, 0.3, -0.8, 0.2, -0.8, 0.3,  // Bottom part of G
+                -0.6, 0.4, -0.5, 0.4, -0.6, 0.5,  // Inner horizontal part of G
+                -0.6, 0.5, -0.5, 0.4, -0.5, 0.5,  // Inner horizontal part of G
+
+                // A (Bold A made up of multiple triangles)
+                -0.3, 0.6, -0.4, 0.2, -0.2, 0.6,  // Left top triangle of A
+                -0.2, 0.6, -0.4, 0.2, -0.1, 0.2,  // Right top triangle of A
+                -0.3, 0.4, -0.3, 0.3, -0.2, 0.4,  // Middle bar of A
+                -0.2, 0.4, -0.3, 0.3, -0.2, 0.3,  // Middle bar of A
+
+                // R (Bold R made up of multiple triangles)
+                0.1, 0.6, 0.2, 0.6, 0.1, 0.2,    // Left vertical of R
+                0.2, 0.6, 0.2, 0.5, 0.1, 0.2,    // Left vertical of R
+                0.1, 0.6, 0.3, 0.6, 0.2, 0.5,    // Top part of R
+                0.3, 0.6, 0.2, 0.5, 0.3, 0.5,    // Top part of R
+                0.2, 0.5, 0.3, 0.5, 0.2, 0.4,    // Curve part of R
+                0.3, 0.5, 0.3, 0.4, 0.2, 0.4,    // Curve part of R
+                0.1, 0.4, 0.3, 0.4, 0.3, 0.2,    // Diagonal leg of R
+                0.1, 0.4, 0.2, 0.2, 0.3, 0.2     // Diagonal leg of R
+            ]);
+
+            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+            const vertexShaderCode = `
+                attribute vec2 coordinates;
+                void main(void) {
+                    gl_Position = vec4(coordinates, 0.0, 1.0);
+                }
+            `;
+            const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+            gl.shaderSource(vertexShader, vertexShaderCode);
+            gl.compileShader(vertexShader);
+
+            const fragmentShaderCode = `
+                precision mediump float;
+                uniform vec4 color;
+                void main(void) {
+                    gl_FragColor = color;
+                }
+            `;
+            const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+            gl.shaderSource(fragmentShader, fragmentShaderCode);
+            gl.compileShader(fragmentShader);
+
+            const shaderProgram = gl.createProgram();
+            gl.attachShader(shaderProgram, vertexShader);
+            gl.attachShader(shaderProgram, fragmentShader);
+            gl.linkProgram(shaderProgram);
+            gl.useProgram(shaderProgram);
+
+            const coord = gl.getAttribLocation(shaderProgram, "coordinates");
+            gl.vertexAttribPointer(coord, 2, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(coord);
+
+            const color = gl.getUniformLocation(shaderProgram, "color");
+            gl.uniform4fv(color, navyBlue);
+
+            gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 2);
+        }
+
+        let useLines = true;
+
+        function toggleDrawMode() {
+            if (useLines) {
+                drawUsingLines();
+            } else {
+                drawUsingTriangles();
+            }
+            useLines = !useLines;  // Toggle between lines and triangles
+        }
+
+        // Initial drawing and then alternating every 3 seconds
+        toggleDrawMode();
+        setInterval(toggleDrawMode, 3000);
+    }
+
+    window.onload = main;
+</script>
+</body>
+</html>
